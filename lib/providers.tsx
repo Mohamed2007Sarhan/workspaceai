@@ -4,6 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { motion } from "framer-motion"
+import { getCookie, setCookie } from "./cookies"
 
 // Theme Context
 type Theme = "light" | "dark"
@@ -144,42 +145,68 @@ const translations = {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("dark")
+  const [theme, setTheme] = useState<Theme>("light")
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") as Theme
-    if (savedTheme) {
+    setMounted(true)
+    
+    // Check for saved theme in cookies first, then localStorage
+    const savedTheme = getCookie("theme") || localStorage.getItem("theme") as Theme
+    if (savedTheme && (savedTheme === "light" || savedTheme === "dark")) {
       setTheme(savedTheme)
     }
   }, [])
 
   useEffect(() => {
+    if (!mounted) return
+
+    // Save to both cookies and localStorage
+    setCookie("theme", theme)
     localStorage.setItem("theme", theme)
+    
+    // Apply theme to document
     document.documentElement.className = theme
-  }, [theme])
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme, mounted])
 
   const toggleTheme = () => {
     setTheme((prev) => (prev === "light" ? "dark" : "light"))
+  }
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return <ThemeContext.Provider value={{ theme: "light", toggleTheme }}>{children}</ThemeContext.Provider>
   }
 
   return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("ar")
+  const [language, setLanguage] = useState<Language>("en")
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem("language") as Language
-    if (savedLanguage) {
+    setMounted(true)
+    
+    // Check for saved language in cookies first, then localStorage
+    const savedLanguage = getCookie("language") || localStorage.getItem("language") as Language
+    if (savedLanguage && (savedLanguage === "ar" || savedLanguage === "en")) {
       setLanguage(savedLanguage)
     }
   }, [])
 
   useEffect(() => {
+    if (!mounted) return
+
+    // Save to both cookies and localStorage
+    setCookie("language", language)
     localStorage.setItem("language", language)
+    
+    // Apply language to document
     document.documentElement.lang = language
     document.documentElement.dir = language === "ar" ? "rtl" : "ltr"
-  }, [language])
+  }, [language, mounted])
 
   const toggleLanguage = () => {
     setLanguage((prev) => (prev === "ar" ? "en" : "ar"))
@@ -187,6 +214,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   const t = (key: string): string => {
     return translations[language][key as keyof (typeof translations)["ar"]] || key
+  }
+
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return <LanguageContext.Provider value={{ language: "en", toggleLanguage, t }}>{children}</LanguageContext.Provider>
   }
 
   return <LanguageContext.Provider value={{ language, toggleLanguage, t }}>{children}</LanguageContext.Provider>
