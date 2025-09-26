@@ -1,10 +1,13 @@
--- AI Business Platform Database Schema
+-- Initialize database for AI Business Platform
 
-CREATE DATABASE IF NOT EXISTS ai_business_platform;
+-- Create database if not exists
+CREATE DATABASE IF NOT EXISTS ai_business_platform CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Use the database
 USE ai_business_platform;
 
--- Users table
-CREATE TABLE users (
+-- Create users table
+CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
@@ -17,8 +20,8 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- User tokens for authentication
-CREATE TABLE user_tokens (
+-- Create user tokens table
+CREATE TABLE IF NOT EXISTS user_tokens (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     token VARCHAR(255) UNIQUE NOT NULL,
@@ -27,16 +30,16 @@ CREATE TABLE user_tokens (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Permissions table
-CREATE TABLE permissions (
+-- Create permissions table
+CREATE TABLE IF NOT EXISTS permissions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     permission_name VARCHAR(255) UNIQUE NOT NULL,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- User permissions
-CREATE TABLE user_permissions (
+-- Create user permissions table
+CREATE TABLE IF NOT EXISTS user_permissions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     permission_id INT NOT NULL,
@@ -48,8 +51,8 @@ CREATE TABLE user_permissions (
     UNIQUE KEY unique_user_permission (user_id, permission_id)
 );
 
--- Teams table
-CREATE TABLE teams (
+-- Create teams table
+CREATE TABLE IF NOT EXISTS teams (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     description TEXT,
@@ -59,8 +62,8 @@ CREATE TABLE teams (
     FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Team members
-CREATE TABLE team_members (
+-- Create team members table
+CREATE TABLE IF NOT EXISTS team_members (
     id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT NOT NULL,
     user_id INT NOT NULL,
@@ -71,8 +74,8 @@ CREATE TABLE team_members (
     UNIQUE KEY unique_team_member (team_id, user_id)
 );
 
--- Team invitations
-CREATE TABLE team_invitations (
+-- Create team invitations table
+CREATE TABLE IF NOT EXISTS team_invitations (
     id INT AUTO_INCREMENT PRIMARY KEY,
     team_id INT NOT NULL,
     email VARCHAR(255) NOT NULL,
@@ -87,8 +90,8 @@ CREATE TABLE team_invitations (
     FOREIGN KEY (invited_by) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- System settings
-CREATE TABLE system_settings (
+-- Create system settings table
+CREATE TABLE IF NOT EXISTS system_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     setting_key VARCHAR(255) UNIQUE NOT NULL,
     setting_value TEXT,
@@ -100,8 +103,8 @@ CREATE TABLE system_settings (
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- System logs
-CREATE TABLE system_logs (
+-- Create system logs table
+CREATE TABLE IF NOT EXISTS system_logs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     log_level ENUM('debug', 'info', 'warning', 'error', 'critical') NOT NULL,
     category VARCHAR(255) NOT NULL,
@@ -113,8 +116,8 @@ CREATE TABLE system_logs (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
--- System sessions
-CREATE TABLE system_sessions (
+-- Create system sessions table
+CREATE TABLE IF NOT EXISTS system_sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     session_token VARCHAR(255) UNIQUE NOT NULL,
@@ -126,8 +129,8 @@ CREATE TABLE system_sessions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- System backups
-CREATE TABLE system_backups (
+-- Create system backups table
+CREATE TABLE IF NOT EXISTS system_backups (
     id INT AUTO_INCREMENT PRIMARY KEY,
     backup_name VARCHAR(255) NOT NULL,
     backup_type ENUM('full', 'incremental', 'differential') DEFAULT 'full',
@@ -141,7 +144,7 @@ CREATE TABLE system_backups (
 );
 
 -- Insert default permissions
-INSERT INTO permissions (permission_name, description) VALUES
+INSERT IGNORE INTO permissions (permission_name, description) VALUES
 ('user_management', 'Manage users and their accounts'),
 ('team_management', 'Create and manage teams'),
 ('permission_management', 'Assign and revoke permissions'),
@@ -154,17 +157,33 @@ INSERT INTO permissions (permission_name, description) VALUES
 ('brand_management', 'Manage brand settings');
 
 -- Insert default admin user
-INSERT INTO users (name, email, password, company, role, status) VALUES
+INSERT IGNORE INTO users (name, email, password, company, role, status) VALUES
 ('System Administrator', 'admin@aibusiness.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'AI Business Platform', 'super_admin', 'active');
 
 -- Insert default system settings
-INSERT INTO system_settings (setting_key, setting_value, setting_type, description) VALUES
+INSERT IGNORE INTO system_settings (setting_key, setting_value, setting_type, description) VALUES
 ('site_name', 'AI Business Platform', 'string', 'Website name'),
 ('site_description', 'Advanced AI-powered business management platform', 'string', 'Website description'),
 ('default_language', 'en', 'string', 'Default language for new users'),
-('default_theme', 'dark', 'string', 'Default theme for new users'),
+('default_theme', 'light', 'string', 'Default theme for new users'),
 ('max_team_members', '50', 'number', 'Maximum team members per team'),
 ('session_timeout', '3600', 'number', 'Session timeout in seconds'),
 ('backup_retention_days', '30', 'number', 'Number of days to keep backups'),
 ('email_notifications', 'true', 'boolean', 'Enable email notifications'),
 ('maintenance_mode', 'false', 'boolean', 'Enable maintenance mode');
+
+-- Create indexes for better performance
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_status ON users(status);
+CREATE INDEX idx_user_tokens_token ON user_tokens(token);
+CREATE INDEX idx_user_tokens_expires ON user_tokens(expires_at);
+CREATE INDEX idx_team_members_team ON team_members(team_id);
+CREATE INDEX idx_team_members_user ON team_members(user_id);
+CREATE INDEX idx_team_invitations_token ON team_invitations(invitation_token);
+CREATE INDEX idx_team_invitations_email ON team_invitations(email);
+CREATE INDEX idx_system_logs_level ON system_logs(log_level);
+CREATE INDEX idx_system_logs_category ON system_logs(category);
+CREATE INDEX idx_system_logs_created ON system_logs(created_at);
+CREATE INDEX idx_system_sessions_token ON system_sessions(session_token);
+CREATE INDEX idx_system_sessions_expires ON system_sessions(expires_at);

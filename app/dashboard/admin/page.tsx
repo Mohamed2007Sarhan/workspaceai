@@ -10,6 +10,10 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { UserManagement } from "@/components/admin/UserManagement"
+import { PermissionManagement } from "@/components/admin/PermissionManagement"
+import { TeamManagement } from "@/components/admin/TeamManagement"
+import { useLanguage } from "@/lib/providers"
 import { 
   Users, 
   Shield, 
@@ -39,6 +43,7 @@ import {
 } from "lucide-react"
 
 export default function AdminDashboard() {
+  const { t } = useLanguage()
   const [activeTab, setActiveTab] = useState("overview")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
@@ -195,11 +200,13 @@ export default function AdminDashboard() {
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">نظرة عامة</TabsTrigger>
-          <TabsTrigger value="users">إدارة المستخدمين</TabsTrigger>
-          <TabsTrigger value="system">إدارة النظام</TabsTrigger>
-          <TabsTrigger value="analytics">التحليلات</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="overview">{t("dashboard.overview")}</TabsTrigger>
+          <TabsTrigger value="users">{t("dashboard.employees")}</TabsTrigger>
+          <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          <TabsTrigger value="teams">Teams</TabsTrigger>
+          <TabsTrigger value="system">System</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -264,77 +271,17 @@ export default function AdminDashboard() {
 
         {/* Users Management Tab */}
         <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>إدارة المستخدمين</CardTitle>
-              <CardDescription>عرض وإدارة جميع المستخدمين في النظام</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {/* Search and Filters */}
-              <div className="flex gap-4 mb-6">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="البحث عن المستخدمين..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pr-10"
-                    />
-                  </div>
-                </div>
-                <Select value={selectedRole} onValueChange={setSelectedRole}>
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="فلترة حسب الدور" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">جميع الأدوار</SelectItem>
-                    <SelectItem value="admin">مدير</SelectItem>
-                    <SelectItem value="moderator">مشرف</SelectItem>
-                    <SelectItem value="user">مستخدم</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button variant="outline">
-                  <Filter className="w-4 h-4 mr-2" />
-                  فلترة
-                </Button>
-              </div>
+          <UserManagement />
+        </TabsContent>
 
-              {/* Users Table */}
-              <div className="space-y-2">
-                {recentUsers.map((user) => (
-                  <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-sm font-medium">{user.name.charAt(0)}</span>
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <Badge variant={user.status === "active" ? "default" : "secondary"}>
-                        {user.status === "active" ? "نشط" : "غير نشط"}
-                      </Badge>
-                      <Badge variant="outline">{user.role}</Badge>
-                      <div className="flex gap-2">
-                        <Button variant="ghost" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        {/* Permissions Management Tab */}
+        <TabsContent value="permissions" className="space-y-4">
+          <PermissionManagement />
+        </TabsContent>
+
+        {/* Teams Management Tab */}
+        <TabsContent value="teams" className="space-y-4">
+          <TeamManagement />
         </TabsContent>
 
         {/* System Management Tab */}
